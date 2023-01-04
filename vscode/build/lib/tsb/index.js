@@ -25,7 +25,7 @@ function createNullCompiler() {
     result.src = () => new EmptyDuplex();
     return result;
 }
-const _defaultOnError = (err) => console.log(JSON.stringify(err, null, 4));
+const _defaultOnError = err => {};
 function create(projectPath, existingOptions, config, onError = _defaultOnError) {
     function printDiagnostic(diag) {
         if (!diag.file || !diag.start) {
@@ -104,7 +104,7 @@ function create(projectPath, existingOptions, config, onError = _defaultOnError)
     result.src = (opts) => {
         let _pos = 0;
         const _fileNames = cmdLine.fileNames.slice(0);
-        return new class extends stream_1.Readable {
+        return new (class extends stream_1.Readable {
             constructor() {
                 super({ objectMode: true });
             }
@@ -125,7 +125,7 @@ function create(projectPath, existingOptions, config, onError = _defaultOnError)
                     this.push(null);
                 }
             }
-        };
+        });
     };
     return result;
 }

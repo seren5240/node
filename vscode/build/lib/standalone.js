@@ -27,89 +27,88 @@ function writeFile(filePath, contents) {
     fs.writeFileSync(filePath, contents);
 }
 function extractEditor(options) {
-    const ts = require('typescript');
-    const tsConfig = JSON.parse(fs.readFileSync(path.join(options.sourcesRoot, 'tsconfig.monaco.json')).toString());
-    let compilerOptions;
-    if (tsConfig.extends) {
-        compilerOptions = Object.assign({}, require(path.join(options.sourcesRoot, tsConfig.extends)).compilerOptions, tsConfig.compilerOptions);
-        delete tsConfig.extends;
-    }
-    else {
-        compilerOptions = tsConfig.compilerOptions;
-    }
-    tsConfig.compilerOptions = compilerOptions;
-    compilerOptions.noEmit = false;
-    compilerOptions.noUnusedLocals = false;
-    compilerOptions.preserveConstEnums = false;
-    compilerOptions.declaration = false;
-    compilerOptions.moduleResolution = ts.ModuleResolutionKind.Classic;
-    options.compilerOptions = compilerOptions;
-    console.log(`Running tree shaker with shakeLevel ${tss.toStringShakeLevel(options.shakeLevel)}`);
-    // Take the extra included .d.ts files from `tsconfig.monaco.json`
-    options.typings = tsConfig.include.filter(includedFile => /\.d\.ts$/.test(includedFile));
-    // Add extra .d.ts files from `node_modules/@types/`
-    if (Array.isArray(options.compilerOptions?.types)) {
-        options.compilerOptions.types.forEach((type) => {
-            options.typings.push(`../node_modules/@types/${type}/index.d.ts`);
-        });
-    }
-    const result = tss.shake(options);
-    for (const fileName in result) {
-        if (result.hasOwnProperty(fileName)) {
-            writeFile(path.join(options.destRoot, fileName), result[fileName]);
-        }
-    }
-    const copied = {};
-    const copyFile = (fileName) => {
-        if (copied[fileName]) {
-            return;
-        }
-        copied[fileName] = true;
-        const srcPath = path.join(options.sourcesRoot, fileName);
-        const dstPath = path.join(options.destRoot, fileName);
-        writeFile(dstPath, fs.readFileSync(srcPath));
-    };
-    const writeOutputFile = (fileName, contents) => {
-        writeFile(path.join(options.destRoot, fileName), contents);
-    };
-    for (const fileName in result) {
-        if (result.hasOwnProperty(fileName)) {
-            const fileContents = result[fileName];
-            const info = ts.preProcessFile(fileContents);
-            for (let i = info.importedFiles.length - 1; i >= 0; i--) {
-                const importedFileName = info.importedFiles[i].fileName;
-                let importedFilePath;
-                if (/^vs\/css!/.test(importedFileName)) {
-                    importedFilePath = importedFileName.substr('vs/css!'.length) + '.css';
-                }
-                else {
-                    importedFilePath = importedFileName;
-                }
-                if (/(^\.\/)|(^\.\.\/)/.test(importedFilePath)) {
-                    importedFilePath = path.join(path.dirname(fileName), importedFilePath);
-                }
-                if (/\.css$/.test(importedFilePath)) {
-                    transportCSS(importedFilePath, copyFile, writeOutputFile);
-                }
-                else {
-                    if (fs.existsSync(path.join(options.sourcesRoot, importedFilePath + '.js'))) {
-                        copyFile(importedFilePath + '.js');
-                    }
-                }
-            }
-        }
-    }
-    delete tsConfig.compilerOptions.moduleResolution;
-    writeOutputFile('tsconfig.json', JSON.stringify(tsConfig, null, '\t'));
-    [
-        'vs/css.build.ts',
-        'vs/css.ts',
-        'vs/loader.js',
-        'vs/loader.d.ts',
-        'vs/nls.build.ts',
-        'vs/nls.ts',
-        'vs/nls.mock.ts',
-    ].forEach(copyFile);
+  const ts = require('typescript');
+  const tsConfig = JSON.parse(fs.readFileSync(path.join(options.sourcesRoot, 'tsconfig.monaco.json')).toString());
+  let compilerOptions;
+  if (tsConfig.extends) {
+      compilerOptions = Object.assign({}, require(path.join(options.sourcesRoot, tsConfig.extends)).compilerOptions, tsConfig.compilerOptions);
+      delete tsConfig.extends;
+  }
+  else {
+      compilerOptions = tsConfig.compilerOptions;
+  }
+  tsConfig.compilerOptions = compilerOptions;
+  compilerOptions.noEmit = false;
+  compilerOptions.noUnusedLocals = false;
+  compilerOptions.preserveConstEnums = false;
+  compilerOptions.declaration = false;
+  compilerOptions.moduleResolution = ts.ModuleResolutionKind.Classic;
+  options.compilerOptions = compilerOptions;
+  // Take the extra included .d.ts files from `tsconfig.monaco.json`
+  options.typings = tsConfig.include.filter(includedFile => /\.d\.ts$/.test(includedFile));
+  // Add extra .d.ts files from `node_modules/@types/`
+  if (Array.isArray(options.compilerOptions?.types)) {
+      options.compilerOptions.types.forEach((type) => {
+          options.typings.push(`../node_modules/@types/${type}/index.d.ts`);
+      });
+  }
+  const result = tss.shake(options);
+  for (const fileName in result) {
+      if (result.hasOwnProperty(fileName)) {
+          writeFile(path.join(options.destRoot, fileName), result[fileName]);
+      }
+  }
+  const copied = {};
+  const copyFile = (fileName) => {
+      if (copied[fileName]) {
+          return;
+      }
+      copied[fileName] = true;
+      const srcPath = path.join(options.sourcesRoot, fileName);
+      const dstPath = path.join(options.destRoot, fileName);
+      writeFile(dstPath, fs.readFileSync(srcPath));
+  };
+  const writeOutputFile = (fileName, contents) => {
+      writeFile(path.join(options.destRoot, fileName), contents);
+  };
+  for (const fileName in result) {
+      if (result.hasOwnProperty(fileName)) {
+          const fileContents = result[fileName];
+          const info = ts.preProcessFile(fileContents);
+          for (let i = info.importedFiles.length - 1; i >= 0; i--) {
+              const importedFileName = info.importedFiles[i].fileName;
+              let importedFilePath;
+              if (/^vs\/css!/.test(importedFileName)) {
+                  importedFilePath = importedFileName.substr('vs/css!'.length) + '.css';
+              }
+              else {
+                  importedFilePath = importedFileName;
+              }
+              if (/(^\.\/)|(^\.\.\/)/.test(importedFilePath)) {
+                  importedFilePath = path.join(path.dirname(fileName), importedFilePath);
+              }
+              if (/\.css$/.test(importedFilePath)) {
+                  transportCSS(importedFilePath, copyFile, writeOutputFile);
+              }
+              else {
+                  if (fs.existsSync(path.join(options.sourcesRoot, importedFilePath + '.js'))) {
+                      copyFile(importedFilePath + '.js');
+                  }
+              }
+          }
+      }
+  }
+  delete tsConfig.compilerOptions.moduleResolution;
+  writeOutputFile('tsconfig.json', JSON.stringify(tsConfig, null, '\t'));
+  [
+      'vs/css.build.ts',
+      'vs/css.ts',
+      'vs/loader.js',
+      'vs/loader.d.ts',
+      'vs/nls.build.ts',
+      'vs/nls.ts',
+      'vs/nls.mock.ts',
+  ].forEach(copyFile);
 }
 exports.extractEditor = extractEditor;
 function createESMSourcesAndResources2(options) {
@@ -129,64 +128,63 @@ function createESMSourcesAndResources2(options) {
     };
     const allFiles = walkDirRecursive(SRC_FOLDER);
     for (const file of allFiles) {
-        if (options.ignores.indexOf(file.replace(/\\/g, '/')) >= 0) {
-            continue;
-        }
-        if (file === 'tsconfig.json') {
-            const tsConfig = JSON.parse(fs.readFileSync(path.join(SRC_FOLDER, file)).toString());
-            tsConfig.compilerOptions.module = 'es6';
-            tsConfig.compilerOptions.outDir = path.join(path.relative(OUT_FOLDER, OUT_RESOURCES_FOLDER), 'vs').replace(/\\/g, '/');
-            write(getDestAbsoluteFilePath(file), JSON.stringify(tsConfig, null, '\t'));
-            continue;
-        }
-        if (/\.d\.ts$/.test(file) || /\.css$/.test(file) || /\.js$/.test(file) || /\.ttf$/.test(file)) {
-            // Transport the files directly
-            write(getDestAbsoluteFilePath(file), fs.readFileSync(path.join(SRC_FOLDER, file)));
-            continue;
-        }
-        if (/\.ts$/.test(file)) {
-            // Transform the .ts file
-            let fileContents = fs.readFileSync(path.join(SRC_FOLDER, file)).toString();
-            const info = ts.preProcessFile(fileContents);
-            for (let i = info.importedFiles.length - 1; i >= 0; i--) {
-                const importedFilename = info.importedFiles[i].fileName;
-                const pos = info.importedFiles[i].pos;
-                const end = info.importedFiles[i].end;
-                let importedFilepath;
-                if (/^vs\/css!/.test(importedFilename)) {
-                    importedFilepath = importedFilename.substr('vs/css!'.length) + '.css';
-                }
-                else {
-                    importedFilepath = importedFilename;
-                }
-                if (/(^\.\/)|(^\.\.\/)/.test(importedFilepath)) {
-                    importedFilepath = path.join(path.dirname(file), importedFilepath);
-                }
-                let relativePath;
-                if (importedFilepath === path.dirname(file).replace(/\\/g, '/')) {
-                    relativePath = '../' + path.basename(path.dirname(file));
-                }
-                else if (importedFilepath === path.dirname(path.dirname(file)).replace(/\\/g, '/')) {
-                    relativePath = '../../' + path.basename(path.dirname(path.dirname(file)));
-                }
-                else {
-                    relativePath = path.relative(path.dirname(file), importedFilepath);
-                }
-                relativePath = relativePath.replace(/\\/g, '/');
-                if (!/(^\.\/)|(^\.\.\/)/.test(relativePath)) {
-                    relativePath = './' + relativePath;
-                }
-                fileContents = (fileContents.substring(0, pos + 1)
-                    + relativePath
-                    + fileContents.substring(end + 1));
-            }
-            fileContents = fileContents.replace(/import ([a-zA-Z0-9]+) = require\(('[^']+')\);/g, function (_, m1, m2) {
-                return `import * as ${m1} from ${m2};`;
-            });
-            write(getDestAbsoluteFilePath(file), fileContents);
-            continue;
-        }
-        console.log(`UNKNOWN FILE: ${file}`);
+      if (options.ignores.indexOf(file.replace(/\\/g, '/')) >= 0) {
+          continue;
+      }
+      if (file === 'tsconfig.json') {
+          const tsConfig = JSON.parse(fs.readFileSync(path.join(SRC_FOLDER, file)).toString());
+          tsConfig.compilerOptions.module = 'es6';
+          tsConfig.compilerOptions.outDir = path.join(path.relative(OUT_FOLDER, OUT_RESOURCES_FOLDER), 'vs').replace(/\\/g, '/');
+          write(getDestAbsoluteFilePath(file), JSON.stringify(tsConfig, null, '\t'));
+          continue;
+      }
+      if (/\.d\.ts$/.test(file) || /\.css$/.test(file) || /\.js$/.test(file) || /\.ttf$/.test(file)) {
+          // Transport the files directly
+          write(getDestAbsoluteFilePath(file), fs.readFileSync(path.join(SRC_FOLDER, file)));
+          continue;
+      }
+      if (/\.ts$/.test(file)) {
+          // Transform the .ts file
+          let fileContents = fs.readFileSync(path.join(SRC_FOLDER, file)).toString();
+          const info = ts.preProcessFile(fileContents);
+          for (let i = info.importedFiles.length - 1; i >= 0; i--) {
+              const importedFilename = info.importedFiles[i].fileName;
+              const pos = info.importedFiles[i].pos;
+              const end = info.importedFiles[i].end;
+              let importedFilepath;
+              if (/^vs\/css!/.test(importedFilename)) {
+                  importedFilepath = importedFilename.substr('vs/css!'.length) + '.css';
+              }
+              else {
+                  importedFilepath = importedFilename;
+              }
+              if (/(^\.\/)|(^\.\.\/)/.test(importedFilepath)) {
+                  importedFilepath = path.join(path.dirname(file), importedFilepath);
+              }
+              let relativePath;
+              if (importedFilepath === path.dirname(file).replace(/\\/g, '/')) {
+                  relativePath = '../' + path.basename(path.dirname(file));
+              }
+              else if (importedFilepath === path.dirname(path.dirname(file)).replace(/\\/g, '/')) {
+                  relativePath = '../../' + path.basename(path.dirname(path.dirname(file)));
+              }
+              else {
+                  relativePath = path.relative(path.dirname(file), importedFilepath);
+              }
+              relativePath = relativePath.replace(/\\/g, '/');
+              if (!/(^\.\/)|(^\.\.\/)/.test(relativePath)) {
+                  relativePath = './' + relativePath;
+              }
+              fileContents = (fileContents.substring(0, pos + 1)
+                  + relativePath
+                  + fileContents.substring(end + 1));
+          }
+          fileContents = fileContents.replace(/import ([a-zA-Z0-9]+) = require\(('[^']+')\);/g, function (_, m1, m2) {
+              return `import * as ${m1} from ${m2};`;
+          });
+          write(getDestAbsoluteFilePath(file), fileContents);
+          continue;
+      }
     }
     function walkDirRecursive(dir) {
         if (dir.charAt(dir.length - 1) !== '/' || dir.charAt(dir.length - 1) !== '\\') {

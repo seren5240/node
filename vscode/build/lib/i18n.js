@@ -110,8 +110,7 @@ class XLF {
     }
     addFile(original, keys, messages) {
         if (keys.length === 0) {
-            console.log('No keys in ' + original);
-            return;
+          return;
         }
         if (keys.length !== messages.length) {
             throw new Error(`Unmatching keys(${keys.length}) and messages(${messages.length}).`);
