@@ -27,16 +27,15 @@ function toStringShakeLevel(shakeLevel) {
 exports.toStringShakeLevel = toStringShakeLevel;
 function printDiagnostics(options, diagnostics) {
     for (const diag of diagnostics) {
-        let result = '';
-        if (diag.file) {
-            result += `${path.join(options.sourcesRoot, diag.file.fileName)}`;
-        }
-        if (diag.file && diag.start) {
-            const location = diag.file.getLineAndCharacterOfPosition(diag.start);
-            result += `:${location.line + 1}:${location.character}`;
-        }
-        result += ` - ` + JSON.stringify(diag.messageText);
-        console.log(result);
+      let result = '';
+      if (diag.file) {
+          result += `${path.join(options.sourcesRoot, diag.file.fileName)}`;
+      }
+      if (diag.file && diag.start) {
+          const location = diag.file.getLineAndCharacterOfPosition(diag.start);
+          result += `:${location.line + 1}:${location.character}`;
+      }
+      result += ` - ` + JSON.stringify(diag.messageText);
     }
 }
 function shake(options) {
@@ -470,9 +469,7 @@ function markNodes(ts, languageService, options) {
     while (black_queue.length > 0 || gray_queue.length > 0) {
         ++step;
         let node;
-        if (step % 100 === 0) {
-            console.log(`Treeshaking - ${Math.floor(100 * step / (step + black_queue.length + gray_queue.length))}% - ${step}/${step + black_queue.length + gray_queue.length} (${black_queue.length}, ${gray_queue.length})`);
-        }
+        if (step % 100 === 0) {}
         if (black_queue.length === 0) {
             for (let i = 0; i < gray_queue.length; i++) {
                 const node = gray_queue[i];
