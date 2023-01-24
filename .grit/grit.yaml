@@ -9,3 +9,4 @@ patterns:
       or { `throw new Error($msg)`, `throw $msg` } where {
         $msg <: r"Not implemented(.*)"
       }
+  - name: github.com/getgrit/js#NoConsoleLog
