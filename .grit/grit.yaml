@@ -1,0 +1,11 @@
+version: 0.0.1
+github:
+  checks: true
+patterns:
+  - name: NoNotImplemented
+    description: Unimplemented functions should not be pushed to master
+    enforced: true
+    body: |
+      or { `throw new Error($msg)`, `throw $msg` } where {
+        $msg <: r"Not implemented(.*)"
+      }
