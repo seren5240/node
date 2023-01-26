@@ -10,3 +10,4 @@ patterns:
         $msg <: r"Not implemented(.*)"
       }
   - name: github.com/getgrit/js#NoConsoleLog
+    enforced: true
