@@ -11,3 +11,4 @@ patterns:
       }
   - name: github.com/getgrit/js#NoConsoleLog
     enforced: true
+    description: test
